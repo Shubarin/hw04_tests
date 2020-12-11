@@ -3,10 +3,9 @@ import datetime
 from django.contrib.auth import get_user_model
 from django.contrib.flatpages.models import FlatPage
 from django.contrib.sites.models import Site
-from django.test import TestCase, Client
+from django.test import Client, TestCase
 from django.urls import reverse
-
-from posts.models import Post, Group, User
+from posts.models import Group, Post, User
 
 
 class StaticURLTests(TestCase):
@@ -87,18 +86,27 @@ class PostURLTests(TestCase):
             group=cls.group
         )
         cls.templates_url_names = {
-            'index.html': '/',
-            'group.html': '/group/test-slug/',
-            'new_post.html': '/new/',
-            'profile.html': '/testusername/',
-            'post.html': '/testusername/1/',
+            'index.html': reverse('posts:index'),
+            'new_post.html': reverse('posts:new_post'),
+            'group.html': (
+                reverse('posts:blogs', kwargs={'slug': 'test-slug'})
+            ),
+            'profile.html': (
+                reverse('posts:profile', kwargs={'username': 'testusername'})
+            ),
+            'post.html': (
+                reverse('posts:post', kwargs={'username': 'testusername',
+                                              'post_id': 1})
+            ),
         }
         cls.urls_not_login_required = [
-            '/',
-            '/group/test-slug/',
-            '/testusername/',
-            '/testusername/1/',
+            reverse('posts:index'),
+            reverse('posts:blogs', kwargs={'slug': 'test-slug'}),
+            reverse('posts:profile', kwargs={'username': 'testusername'}),
+            reverse('posts:post', kwargs={'username': 'testusername',
+                                          'post_id': 1}),
         ]
+        cls.post_id = cls.post.id
 
     def setUp(self):
         self.guest_client = Client()
@@ -119,7 +127,7 @@ class PostURLTests(TestCase):
         """Страница по адресу /new/ перенаправит анонимного
         пользователя на страницу логина.
         """
-        response = self.guest_client.get('/new/', follow=True)
+        response = self.guest_client.get(reverse('posts:new_post'), follow=True)
         self.assertRedirects(
             response, '/auth/login/?next=/new/')
 
@@ -127,25 +135,33 @@ class PostURLTests(TestCase):
         """Страница по адресу /testusername/1/edit/ перенаправит анонимного
         пользователя на страницу логина.
         """
-        response = self.guest_client.get('/testusername/1/edit/', follow=True)
-        self.assertRedirects(response, '/')
+        response = self.guest_client.get(
+            reverse('posts:post_edit', kwargs={'username': 'testusername',
+                                               'post_id': PostURLTests.post_id}),
+            follow=True)
+        self.assertRedirects(response, reverse('posts:index'))
 
     def test_new_exists_at_desired_location(self):
         """Страница /new/ доступна авторизованному пользователю."""
-        response = self.authorized_client.get('/new/', follow=True)
+        response = self.authorized_client.get(reverse('posts:new_post'),
+                                              follow=True)
         self.assertEqual(response.status_code, 200)
 
     def test_post_edit_exists_at_desired_location(self):
         """Страница /testusername/1/edit/ доступна автору поста"""
-        response = self.authorized_client.get('/testusername/1/edit/',
-                                              follow=True)
+        response = self.authorized_client.get(
+            reverse('posts:post_edit', kwargs={'username': 'testusername',
+                                               'post_id': PostURLTests.post_id}),
+            follow=True)
         self.assertEqual(response.status_code, 200)
 
     def test_post_edit_redirect_auth_user_no_author(self):
         """Страница /testusername/1/edit/ переадресует авторизованного НЕавтора"""
-        response = self.authorized_client_not_author.get('/testusername/1/edit/',
-                                              follow=True)
-        self.assertRedirects(response, '/')
+        response = self.authorized_client_not_author.get(
+            reverse('posts:post_edit', kwargs={'username': 'testusername',
+                                               'post_id': PostURLTests.post_id}),
+            follow=True)
+        self.assertRedirects(response, reverse('posts:index'))
 
     def test_urls_not_login_required_exists_at_anonymous(self):
         """Общедоступные страницы доступны неавторизованному пользователю"""

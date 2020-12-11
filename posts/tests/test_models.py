@@ -1,8 +1,7 @@
 import datetime
 
 from django.test import TestCase
-
-from posts.models import Post, User, Group
+from posts.models import Group, Post, User
 
 
 class PostModelTest(TestCase):

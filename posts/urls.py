@@ -1,12 +1,13 @@
 from django.urls import path
+
 from . import views
 
-app_name = "posts"
+app_name = 'posts'
 
 urlpatterns = [
-    path("", views.index, name="index"),
-    path("group/<slug:slug>/", views.group_posts, name="blogs"),
-    path('new/', views.new_post, name="new_post"),
+    path('', views.index, name='index'),
+    path('group/<slug:slug>/', views.group_posts, name='blogs'),
+    path('new/', views.new_post, name='new_post'),
     # Профайл пользователя
     path('<str:username>/', views.profile, name='profile'),
     # Просмотр записи

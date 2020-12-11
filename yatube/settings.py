@@ -25,10 +25,10 @@ SECRET_KEY = 'xg1w#uyh4@+@rq)ve+f@ugg-#g_nn3lu1!(s92j8)2@czg=hvx'
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    "[::1]",
-    "testserver",
+    'localhost',
+    '127.0.0.1',
+    '[::1]',
+    'testserver',
 ]
 
 # Application definition
@@ -125,12 +125,15 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 # Login
 
-LOGIN_URL = "/auth/login/"
-LOGIN_REDIRECT_URL = "posts:index"
+LOGIN_URL = '/auth/login/'
+LOGIN_REDIRECT_URL = 'posts:index'
 # LOGOUT_REDIRECT_URL = "index"
 
-EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
-EMAIL_FILE_PATH = os.path.join(BASE_DIR, "sent_emails")
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
+
+# Paginator setup
+RECORDS_ON_THE_PAGE = 10
 
 # Идентификатор текущего сайта
 SITE_ID = 1

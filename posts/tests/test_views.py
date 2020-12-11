@@ -1,14 +1,10 @@
 import datetime
 
 from django import forms
-from django.contrib.auth import get_user_model
-from django.contrib.flatpages.models import FlatPage
-from django.contrib.sites.models import Site
-from django.core.paginator import Paginator
 from django.test import Client, TestCase
 from django.urls import reverse
-
-from posts.models import User, Group, Post
+from posts.models import Group, Post, User
+from yatube.settings import RECORDS_ON_THE_PAGE
 
 
 class PostPagesTests(TestCase):
@@ -31,6 +27,7 @@ class PostPagesTests(TestCase):
             author=cls.user,
             group=cls.group
         )
+        cls.post_id = cls.post.id
 
     def setUp(self):
         self.guest_client = Client()
@@ -38,7 +35,6 @@ class PostPagesTests(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(PostPagesTests.user)
 
-    # Проверяем используемые шаблоны
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
         templates_pages_names = {
@@ -52,7 +48,7 @@ class PostPagesTests(TestCase):
             ),
             'post.html': (
                 reverse('posts:post', kwargs={'username': 'testusername',
-                                              'post_id': 1})
+                                              'post_id': PostPagesTests.post_id})
             ),
         }
         for template, reverse_name in templates_pages_names.items():
@@ -64,11 +60,9 @@ class PostPagesTests(TestCase):
         template = 'new_post.html'
         response = self.authorized_client.get(
             reverse('posts:post_edit', kwargs={'username': 'testusername',
-                                               'post_id': 1}))
+                                               'post_id': PostPagesTests.post_id}))
         self.assertTemplateUsed(response, template)
 
-    # Проверка словаря контекста страницы для создания поста
-    # (в нём передаётся форма)
     def test_new_post_page_show_correct_context(self):
         """Шаблон new_post сформирован с правильным контекстом."""
         response = self.authorized_client.get(reverse('posts:new_post'))
@@ -81,11 +75,11 @@ class PostPagesTests(TestCase):
                 form_field = response.context.get('form').fields.get(value)
                 self.assertIsInstance(form_field, expected)
 
-    # Проверяем, что словарь context главной страницы
-    # содержит ожидаемые значения, и при создании поста
-    # этот пост появляется на главной странице сайта
     def test_index_page_show_correct_context(self):
-        """Шаблон index сформирован с правильным контекстом."""
+        """
+        Шаблон index сформирован с правильным контекстом.
+        и при создании поста этот пост появляется на главной странице сайта
+        """
         response = self.authorized_client.get(reverse('posts:index'))
         # Взяли первый элемент из списка и проверили, что его содержание
         # совпадает с ожидаемым
@@ -98,9 +92,6 @@ class PostPagesTests(TestCase):
         self.assertEqual(post_author_0, PostPagesTests.user)
         self.assertEqual(post_group_0, PostPagesTests.group)
 
-    # Проверяем, что словарь context страницы group/test-slug
-    # содержит ожидаемые значения и при создании поста
-    # этот пост появляется на странице выбранной группы
     def test_blogs_detail_pages_show_correct_context(self):
         """
         Шаблон blogs сформирован с правильным контекстом.
@@ -115,8 +106,6 @@ class PostPagesTests(TestCase):
                          'test description')
         self.assertEqual(response.context.get('group').slug, 'test-slug')
 
-    # Проверяем, что словарь context страницы testusername/
-    # содержит ожидаемые значения
     def test_profile_pages_show_correct_context(self):
         """Шаблон profile сформирован с правильным контекстом."""
         response = self.authorized_client.get(
@@ -142,14 +131,15 @@ class PaginatorViewsTest(TestCase):
             description='test description'
         )
         cls.first_page_object_list = []
-        for post_number in range(1, 14):
+        cls.extra = 3
+        for post_number in range(1, RECORDS_ON_THE_PAGE + cls.extra + 1):
             post = Post.objects.create(
                 text=f'{post_number}. Заголовок тестовой записи',
                 pub_date=datetime.date.today(),
                 author=cls.user,
                 group=cls.group
             )
-            if post_number > 3:
+            if post_number > cls.extra:
                 cls.first_page_object_list.append(post)
 
     def setUp(self):
@@ -157,13 +147,17 @@ class PaginatorViewsTest(TestCase):
         self.authorized_client.force_login(PaginatorViewsTest.user)
 
     def test_first_page_containse_ten_records(self):
+        """Первая страница содержит верное количество постов"""
         response = self.authorized_client.get(reverse('posts:index'))
-        self.assertEqual(len(response.context.get('page').object_list), 10)
+        self.assertEqual(len(response.context.get('page').object_list),
+                         RECORDS_ON_THE_PAGE)
 
     def test_second_page_containse_three_records(self):
+        """Вторая страница содержит верное количество постов"""
         response = self.authorized_client.get(
             reverse('posts:index') + '?page=2')
-        self.assertEqual(len(response.context.get('page').object_list), 3)
+        self.assertEqual(len(response.context.get('page').object_list),
+                         PaginatorViewsTest.extra)
 
     def test_first_page_show_correct_context(self):
         """Содержимое постов на первой странице соответствует ожиданиям"""
