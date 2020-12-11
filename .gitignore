@@ -21,4 +21,6 @@ posts/static/
 
 db.sqlite3
 
+htmlcov/*
 htmlcov/
+.htmlcov/
