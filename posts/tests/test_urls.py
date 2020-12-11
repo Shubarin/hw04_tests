@@ -85,6 +85,7 @@ class PostURLTests(TestCase):
             author=cls.user,
             group=cls.group
         )
+        cls.post_id = cls.post.id
         cls.templates_url_names = {
             'index.html': reverse('posts:index'),
             'new_post.html': reverse('posts:new_post'),
@@ -96,7 +97,7 @@ class PostURLTests(TestCase):
             ),
             'post.html': (
                 reverse('posts:post', kwargs={'username': 'testusername',
-                                              'post_id': 1})
+                                              'post_id': cls.post_id})
             ),
         }
         cls.urls_not_login_required = [
@@ -104,7 +105,7 @@ class PostURLTests(TestCase):
             reverse('posts:blogs', kwargs={'slug': 'test-slug'}),
             reverse('posts:profile', kwargs={'username': 'testusername'}),
             reverse('posts:post', kwargs={'username': 'testusername',
-                                          'post_id': 1}),
+                                          'post_id': cls.post_id}),
         ]
         cls.post_id = cls.post.id
 
